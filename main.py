@@ -1,7 +1,7 @@
 import logging
 import re
 import asyncio
-from aiogram import Bot, Dispatcher
+from aiogram import Bot, Dispatcher, F
 from aiogram.types import Message
 from aiogram.enums import ParseMode
 import requests
@@ -39,9 +39,9 @@ def google_search_links(query: str):
             break
     return results
 
-@dp.message(commands=["start"])
+@dp.message(F.text == "/start")
 async def start_handler(message: Message):
-    await message.answer("👋 Привет! Отправь номер телефона для проверки в открытых источниках.")
+    await message.answer("👋 Привет! Отправь номер телефона для проверки.")
 
 @dp.message()
 async def check_phone(message: Message):
