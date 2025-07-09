@@ -4,8 +4,6 @@ import asyncio
 from aiogram import Bot, Dispatcher, F
 from aiogram.types import Message
 from aiogram.enums import ParseMode
-import requests
-from bs4 import BeautifulSoup
 
 API_TOKEN = "8149882262:AAEMCuzHHgyqpyWpgH7jmYR3jC6tCG9y4_g"
 
@@ -22,22 +20,29 @@ def normalize_phone(phone: str) -> str:
         digits = "380" + digits
     return "+" + digits
 
-def google_search_links(query: str):
-    url = f"https://www.google.com/search?q={query}"
-    headers = {"User-Agent": "Mozilla/5.0"}
-    try:
-        resp = requests.get(url, headers=headers, timeout=5)
-    except Exception:
-        return []
-    soup = BeautifulSoup(resp.text, "html.parser")
-    results = []
-    for g in soup.find_all('a'):
-        href = g.get('href')
-        if href and href.startswith('http'):
-            results.append(href)
-        if len(results) >= 5:
-            break
-    return results
+def external_links(phone_number: str):
+    phone = phone_number.strip().replace("+", "")
+    links = []
+
+    # OLX
+    links.append(f"🔍 OLX: https://www.olx.ua/list/q-{phone}/")
+
+    # Facebook
+    links.append(f"🔍 Facebook: https://www.facebook.com/search/top?q={phone}")
+
+    # Google
+    links.append(f"🔍 Google: https://www.google.com/search?q=\"{phone}\"")
+
+    # GetContact (через web)
+    links.append(f"🔍 GetContact (web): https://www.getcontact.com/search?phone={phone}")
+
+    # Nomerogram (база звонков)
+    links.append(f"🔍 Nomerogram: https://nomerogram.com/number/{phone}")
+
+    # Telegram (поиск)
+    links.append(f"🔍 Telegram Search: tg://search?query={phone}")
+
+    return links
 
 @dp.message(F.text == "/start")
 async def start_handler(message: Message):
@@ -49,12 +54,9 @@ async def check_phone(message: Message):
     phone = normalize_phone(phone_raw)
     await message.answer(f"🔍 Проверяю номер: <b>{phone}</b>")
 
-    links = google_search_links(f'"{phone}"')
-    if not links:
-        await message.answer("❌ Ничего не найдено.")
-    else:
-        result = "<b>🔗 Найденные ссылки:</b>\n" + "\n".join(links)
-        await message.answer(result)
+    links = external_links(phone)
+    result = "<b>🔗 Найденные источники:</b>\n\n" + "\n".join(links)
+    await message.answer(result)
 
 async def main():
     await dp.start_polling(bot)
