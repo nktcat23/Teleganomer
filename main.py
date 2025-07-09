@@ -1,7 +1,7 @@
 import logging
 import re
 import asyncio
-from aiogram import Bot, Dispatcher, types
+from aiogram import Bot, Dispatcher
 from aiogram.types import Message
 from aiogram.enums import ParseMode
 import requests
@@ -9,14 +9,11 @@ from bs4 import BeautifulSoup
 
 API_TOKEN = "8149882262:AAEMCuzHHgyqpyWpgH7jmYR3jC6tCG9y4_g"
 
-# Настройка логов
 logging.basicConfig(level=logging.INFO)
 
-# Инициализация бота и диспетчера
 bot = Bot(token=API_TOKEN, parse_mode=ParseMode.HTML)
 dp = Dispatcher()
 
-# Нормализация номера
 def normalize_phone(phone: str) -> str:
     digits = re.sub(r"\D", "", phone)
     if digits.startswith("0"):
@@ -25,7 +22,6 @@ def normalize_phone(phone: str) -> str:
         digits = "380" + digits
     return "+" + digits
 
-# Поиск в Google
 def google_search_links(query: str):
     url = f"https://www.google.com/search?q={query}"
     headers = {"User-Agent": "Mozilla/5.0"}
@@ -43,12 +39,10 @@ def google_search_links(query: str):
             break
     return results
 
-# Команда /start
 @dp.message(commands=["start"])
 async def start_handler(message: Message):
     await message.answer("👋 Привет! Отправь номер телефона для проверки в открытых источниках.")
 
-# Все сообщения — как номера
 @dp.message()
 async def check_phone(message: Message):
     phone_raw = message.text.strip()
@@ -62,7 +56,6 @@ async def check_phone(message: Message):
         result = "<b>🔗 Найденные ссылки:</b>\n" + "\n".join(links)
         await message.answer(result)
 
-# Запуск бота
 async def main():
     await dp.start_polling(bot)
 
