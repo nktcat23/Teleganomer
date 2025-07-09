@@ -9,14 +9,14 @@ from bs4 import BeautifulSoup
 
 API_TOKEN = "8149882262:AAEMCuzHHgyqpyWpgH7jmYR3jC6tCG9y4_g"
 
-# Настройка логирования
+# Настройка логов
 logging.basicConfig(level=logging.INFO)
 
-# Создаем бота и диспетчер
+# Инициализация бота и диспетчера
 bot = Bot(token=API_TOKEN, parse_mode=ParseMode.HTML)
 dp = Dispatcher()
 
-# Нормализация номера телефона
+# Нормализация номера
 def normalize_phone(phone: str) -> str:
     digits = re.sub(r"\D", "", phone)
     if digits.startswith("0"):
@@ -25,11 +25,14 @@ def normalize_phone(phone: str) -> str:
         digits = "380" + digits
     return "+" + digits
 
-# Поиск ссылок через Google (пример)
+# Поиск в Google
 def google_search_links(query: str):
     url = f"https://www.google.com/search?q={query}"
     headers = {"User-Agent": "Mozilla/5.0"}
-    resp = requests.get(url, headers=headers)
+    try:
+        resp = requests.get(url, headers=headers, timeout=5)
+    except Exception:
+        return []
     soup = BeautifulSoup(resp.text, "html.parser")
     results = []
     for g in soup.find_all('a'):
@@ -40,26 +43,24 @@ def google_search_links(query: str):
             break
     return results
 
-# Обработка команды /start
+# Команда /start
 @dp.message(commands=["start"])
 async def start_handler(message: Message):
-    await message.answer("Привет! Отправь номер телефона для проверки.")
+    await message.answer("👋 Привет! Отправь номер телефона для проверки в открытых источниках.")
 
-# Обработка всех остальных сообщений
+# Все сообщения — как номера
 @dp.message()
-async def phone_check_handler(message: Message):
+async def check_phone(message: Message):
     phone_raw = message.text.strip()
     phone = normalize_phone(phone_raw)
-    await message.answer(f"Проверяю номер: <b>{phone}</b>\nИщу в открытых источниках...")
+    await message.answer(f"🔍 Проверяю номер: <b>{phone}</b>")
 
     links = google_search_links(f'"{phone}"')
-
     if not links:
-        await message.answer("Не найдено упоминаний по номеру.")
-        return
-
-    text = "<b>Вот найденные ссылки:</b>\n" + "\n".join(links)
-    await message.answer(text)
+        await message.answer("❌ Ничего не найдено.")
+    else:
+        result = "<b>🔗 Найденные ссылки:</b>\n" + "\n".join(links)
+        await message.answer(result)
 
 # Запуск бота
 async def main():
